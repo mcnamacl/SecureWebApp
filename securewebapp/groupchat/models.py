@@ -8,7 +8,7 @@ class Group(models.Model):
 
 class User(models.Model):
     userName = models.CharField(max_length=64)
-    email = models.CharField(max_length=64)
+    email = models.CharField(max_length=64, default="")
     publicKey = models.CharField(max_length=1024)
     privateKey = models.CharField(max_length=1024)
     symKey = models.CharField(max_length=1024)
