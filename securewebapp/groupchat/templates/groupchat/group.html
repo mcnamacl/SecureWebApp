@@ -5,9 +5,38 @@ Groupchat
 {% endblock %}
 
 {% block body %}
-<h1>Groupchat</h1>
-<form action="{% url 'login' %}" method="post">
-    <p>Name: <input type="text" name="name"></p>
-    <input type="submit" value="Submit">
+<h1>The Fellowship</h1>
+
+<br>
+
+{% if is_member %}
+<form action="{% url 'postmsg' %}" method="post">
+    {% csrf_token %}
+    <input name="msg" type="text" />
+    <input type="submit" value="Post" />
 </form>
+{% endif %}
+
+<h2>Posts:</h2>
+<ul>
+    {% for msg in messages %}
+    <li>
+        {{ msg.text }}
+        <br>
+        Posted by: {{ msg.sender }}
+    </li>
+    {% endfor %}
+</ul>
+
+{% if is_member %}
+<h2>Members:</h2>
+<ul>
+    {% for member in members %}
+    <li>
+        {{ member.username }}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
 {% endblock %}
