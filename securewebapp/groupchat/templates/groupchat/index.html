@@ -1,0 +1,15 @@
+{% extends "groupchat/layout.html" %}
+
+{% block title %}
+Login
+{% endblock %}
+
+{% block body %}
+<h1>Groupchat</h1>
+<form action="{% url 'signup_show' %}" method="get">
+    <input type="submit" value="Sign Up">
+</form>
+<form action="{% url 'login_show' %}" method="get">
+    <input type="submit" value="Login">
+</form>
+{% endblock %}
