@@ -73,8 +73,6 @@ def signup(request):
 
     if name == "Claire":
         members =  User.objects.filter(group=2)
-        print(members, file=sys.stderr)
-
 
     context = {
         "is_member" : is_member,
@@ -91,13 +89,13 @@ def login(request):
     user = User.objects.get(userName=name)
     
     theFellowship = User.objects.filter(group=2)
-    print(type(theFellowship), file=sys.stderr)
     mordorMembers = User.objects.filter(group=1)
 
     if user.isAdmin:
         context = {
             "fellowshipMembers" : theFellowship,
-            "mordorMembers" : mordorMembers
+            "mordorMembers" : mordorMembers,
+            "messages" : Group.objects.get(groupName="The Fellowship").messages.all()
         }
         return render(request, "groupchat/adminpage.html", context)
     
@@ -123,6 +121,22 @@ def login(request):
         "members" : members
     }
     return render(request, "groupchat/group.html", context)
+
+def postmsg(request):
+    theFellowship = User.objects.filter(group=2)
+    mordorMembers = User.objects.filter(group=1)
+
+    msg = request.POST.get("msg")
+    message = Message(sender="dont care", content=msg)
+    message.save()
+    Group.objects.get(groupName="The Fellowship").messages.add(message)
+
+    context = {
+        "fellowshipMembers" : theFellowship,
+        "mordorMembers" : mordorMembers,
+        "messages" : Group.objects.get(groupName="The Fellowship").messages.all()
+    }
+    return render(request, "groupchat/adminpage.html", context)
 
 def addUserToFellowship(request):
     return render(request, "groupchat/adminpage.html")

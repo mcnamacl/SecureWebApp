@@ -22,4 +22,21 @@ Admin Page
     </li>
     {% endfor %}
 </ul>
+
+<h2>Posts:</h2>
+<ul>
+    {% for msg in messages %}
+    <li>
+        {{ msg.content }}
+        <br>
+        Posted by: {{ msg.sender }}
+    </li>
+    {% endfor %}
+</ul>
+
+<form action="{% url 'postmsg' %}" method="post">
+    {% csrf_token %}
+    <input name="msg" type="text" />
+    <input type="submit" value="Post" />
+</form>
 {% endblock %}
