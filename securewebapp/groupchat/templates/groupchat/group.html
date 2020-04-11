@@ -9,8 +9,12 @@ Groupchat
 
 <br>
 
+{% if signup %}
+<h3>Keep this safe - your private key is - {{ privatekey }}</h3>
+{% endif %}
+
 {% if is_member %}
-<form action="{% url 'postmsg' %}" method="post">
+<form action="{% url 'sendmsg' %}" method="post">
     {% csrf_token %}
     <input name="msg" type="text" />
     <input type="submit" value="Post" />

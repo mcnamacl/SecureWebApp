@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Group, User, Message
-import sys
+import sys, os
 
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import PKCS1_OAEP, AES
 import binascii
 
 
@@ -51,11 +51,10 @@ def signup(request):
     privateKey = RSA.generate(1024)
     publicKey = privateKey.publickey()
 
-    privatePem = privateKey.export_key().decode()
-    publicPem = publicKey.export_key().decode()
+    private = privateKey.exportKey().decode()
+    public = publicKey.exportKey().decode()
 
-    newUser.publicKey = privatePem
-    newUser.privateKey = publicPem
+    newUser.publicKey = public
 
     is_member = False
 
@@ -65,7 +64,6 @@ def signup(request):
         newUser.group = Group.objects.get(groupName="The Fellowship")
         newUser.isAdmin = True
         is_member = True
-        newUser.symKey = "lmao"
     else:
         newUser.group = Group.objects.get(groupName="Mordor")
 
@@ -75,12 +73,14 @@ def signup(request):
         members =  User.objects.filter(group=2)
 
     context = {
+        "signup" : True,
         "is_member" : is_member,
         "messages" : Group.objects.get(groupName="The Fellowship").messages.all(),
-        "members" : members
+        "members" : members,
+        "privatekey" : privateKey
     }
 
-    return render(request, "groupchat/group.html")
+    return render(request, "groupchat/group.html", context)
 
 def login(request):
     name = request.GET.get("name", "")
@@ -89,14 +89,13 @@ def login(request):
     user = User.objects.get(userName=name)
     
     theFellowship = User.objects.filter(group=2)
-    mordorMembers = User.objects.filter(group=1)
+    mordor = User.objects.filter(group=1)
 
     if user.isAdmin:
         context = {
             "fellowshipMembers" : theFellowship,
-            "mordorMembers" : mordorMembers,
-            "messages" : Group.objects.get(groupName="The Fellowship").messages.all()
-        }
+            "mordorMembers" : mordor,
+            "messages" : Group.objects.get(groupName="The Fellowship").messages.all()        }
         return render(request, "groupchat/adminpage.html", context)
     
     isFellowshipMember = False
@@ -116,18 +115,21 @@ def login(request):
         members = User.objects.filter(group=2)
     
     context = {
+        "signup" : True,
         "is_member" : isFellowshipMember,
         "messages" : messages,
-        "members" : members
+        "members" : members, 
+        "username" : user.userName
     }
     return render(request, "groupchat/group.html", context)
 
-def postmsg(request):
+def sendmsg(request):
     theFellowship = User.objects.filter(group=2)
     mordorMembers = User.objects.filter(group=1)
 
     msg = request.POST.get("msg")
-    message = Message(sender="dont care", content=msg)
+    sender = request.user
+    message = Message(sender=sender, content=msg)
     message.save()
     Group.objects.get(groupName="The Fellowship").messages.add(message)
 
@@ -136,6 +138,30 @@ def postmsg(request):
         "mordorMembers" : mordorMembers,
         "messages" : Group.objects.get(groupName="The Fellowship").messages.all()
     }
+    return render(request, "groupchat/adminpage.html", context)
+
+def updatesym(request):
+    theFellowship = User.objects.filter(group=2)
+    mordor = User.objects.filter(group=1)
+
+    theFellowshipGroup = Group.objects.get("The Fellowship")
+
+    newKey = os.urandom(16)
+    theFellowshipGroup.currSymKey = newKey
+
+    for member in theFellowship:
+        pubkey = member.pubkey
+        pubkey = pubkey.encode()
+        cipher = PKCS1_OAEP.new(key=pubkey)
+        encryptedSymKey = cipher.encrypt(newKey)
+        member.symKey = encryptedSymKey.decode()
+
+    context = {
+        "fellowshipMembers" : theFellowship,
+        "mordorMembers" : mordor,
+        "messages" : Group.objects.get(groupName="The Fellowship").messages.all()      
+          }
+
     return render(request, "groupchat/adminpage.html", context)
 
 def addUserToFellowship(request):

@@ -34,9 +34,14 @@ Admin Page
     {% endfor %}
 </ul>
 
-<form action="{% url 'postmsg' %}" method="post">
+<form action="{% url 'sendmsg' %}" method="post">
     {% csrf_token %}
     <input name="msg" type="text" />
-    <input type="submit" value="Post" />
+    <input type="submit" value="Send" />
+</form>
+<br>
+<form action="{% url 'updatesym' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Update Symmetric Key" />
 </form>
 {% endblock %}
