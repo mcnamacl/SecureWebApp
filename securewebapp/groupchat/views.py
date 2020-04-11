@@ -8,12 +8,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 import binascii
 from Crypto import Random
-
-BLOCK_SIZE = 16
-pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
-unpad = lambda s: s[:-ord(s[len(s) - 1:])]
-
-iv = Random.new().read(AES.block_size)
+from simple_aes_cipher import AESCipher
 
 
 def index(request):
@@ -59,7 +54,8 @@ def signup(request):
     privateKey = RSA.generate(1024)
     publicKey = privateKey.publickey()
 
-    newUser.publicKey = base64.encodestring(publicKey.exportKey())
+    newUser.publicKey = publicKey.exportKey().decode()
+
     privateKey = privateKey.exportKey().decode()
     with open(newUser.userName + '_private_pem', 'w') as pr:
         pr.write(privateKey)
@@ -78,17 +74,21 @@ def signup(request):
     newUser.save()
 
     if name == "Claire":
-        members =  User.objects.filter(group=2)
+        context = {
+        "messages" : Group.objects.get(groupName="The Fellowship").messages.all(),
+        "fellowshipMembers" : User.objects.filter(group=2),
+        "mordorMembers" : User.objects.filter(group=1),
+        "username" : name
+        }
+        return render(request, "groupchat/adminpage.html", context)
 
     context = {
         "signup" : True,
         "is_member" : is_member,
         "messages" : Group.objects.get(groupName="The Fellowship").messages.all(),
         "members" : members,
-        "privatekey" : privateKey,
         "username" : name
     }
-
     return render(request, "groupchat/group.html", context)
 
 def login(request):
@@ -136,13 +136,13 @@ def sendmsg(request):
 
     user = User.objects.get(userName=sender)
 
-    symKey = Group.objects.get(groupName="The Fellowship").currSymKey
-
-    paddedMsg = pad(msg)
+    # using user get symkey
+    symKey = getSymKey(user)
+    # symKey = Group.objects.get(groupName="The Fellowship").currSymKey
     
-    cipher = AES.new(symKey, AES.MODE_CBC, iv)
+    cipher = AESCipher(symKey)
 
-    encryptedMsg = cipher.encrypt(paddedMsg.encode())
+    encryptedMsg = cipher.encrypt(msg)
 
     message = Message(sender=sender, content=encryptedMsg)
     message.save()
@@ -162,6 +162,7 @@ def getSymKey(user):
     decrypt = PKCS1_OAEP.new(key=privKey)
 
     symKey = decrypt.decrypt(user.symKey)
+
     return symKey
 
 def updatesym(request):
@@ -171,6 +172,7 @@ def updatesym(request):
     username = request.POST.get("username")
 
     oldSymKey = changesymkey()
+
     if oldSymKey != '':
         changeencryption(oldSymKey)
 
@@ -183,7 +185,6 @@ def updatesym(request):
 
     return render(request, "groupchat/adminpage.html", context)
 
-
 def changesymkey():
     theFellowship = User.objects.filter(group=2)
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
@@ -195,7 +196,7 @@ def changesymkey():
 
     for member in theFellowship:
         pubkey = member.publicKey
-        pubkey = RSA.importKey(base64.decodestring(pubkey))
+        pubkey = RSA.importKey(pubkey)
         cipher = PKCS1_OAEP.new(pubkey)
         encryptedSymKey = cipher.encrypt(newKey)
         member.symKey = encryptedSymKey
@@ -214,7 +215,7 @@ def addtofellowship(request):
     currSymKey = Group.objects.get(groupName="The Fellowship").currSymKey
 
     pubkey = user.publicKey
-    pubkey = RSA.importKey(base64.decodestring(pubkey))
+    pubkey = RSA.importKey(pubkey)
     cipher = PKCS1_OAEP.new(pubkey)
     encryptedSymKey = cipher.encrypt(currSymKey)
     user.symKey = encryptedSymKey
@@ -237,13 +238,15 @@ def removefromfellowship(request):
     user.group = Group.objects.get(groupName="Mordor")
     user.save()
 
-    changeencryption()
+    oldSymKey = changesymkey()
+    changeencryption(oldSymKey)
 
     context = {
         "fellowshipMembers" : theFellowship,
         "mordorMembers" : mordor,
-        "messages" : Group.objects.get(groupName="The Fellowship").messages.all()      
-          }
+        "messages" : Group.objects.get(groupName="The Fellowship").messages.all(),
+        "username" : user.userName      
+        }
     return render(request, "groupchat/adminpage.html", context)
 
 def decodemsgs(request):
@@ -259,22 +262,22 @@ def decodemsgs(request):
 
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
-    decryptedMessages = []
+    decryptedMessages = {}
+    decryptedMessages["content"] = []
+    decryptedMessages["sender"] = []
 
-    cipher = AES.new(theFellowshipGroup.currSymKey, AES.MODE_CBC, iv)
+    cipher = AESCipher(symKey)
 
     for message in theFellowshipGroup.messages.all():
-        print(message.content, file=sys.stderr)
         msg = cipher.decrypt(message.content)
-        print(msg, file=sys.stderr)
-        decryptedMessages.append(msg)
+        decryptedMessages["content"].append(msg)
+        decryptedMessages["sender"].append(message.sender)
 
     context = {
         "signup" : False,
         "is_member" : True,
         "messages" : decryptedMessages,
         "members" : theFellowship,
-        "privatekey" : "",
         "username" : username
     }
     return render(request, "groupchat/group.html", context)
@@ -282,9 +285,14 @@ def decodemsgs(request):
 def changeencryption(oldSymKey):
     newMessages = []
     messages = Group.objects.get(groupName="The Fellowship").messages.all()
-    # symKey = Group.objects.get(groupName="The Fellowship").currSymKey
-    cipher = AES.new(oldSymKey, AES.MODE_CBC, iv)
+    symKey = Group.objects.get(groupName="The Fellowship").currSymKey
+    cipher = AESCipher(symKey)
+
+    # new cipher with new symkey
 
     for message in messages:
         msg = cipher.decrypt(message.content)
         print(msg, file=sys.stderr)
+
+        # encrypt with new sym key
+        # update database

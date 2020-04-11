@@ -3,7 +3,7 @@ import base64
 
 class Message(models.Model):
     sender = models.CharField(max_length=64)
-    content = models.BinaryField()
+    content = models.CharField(max_length=64)
 
     def __str__(self):
         return f"{self.content}"
@@ -22,7 +22,7 @@ class User(models.Model):
     isAdmin = models.BooleanField(default=False)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True)
     symKey = models.BinaryField()
-    publicKey = models.BinaryField()
+    publicKey = models.CharField(max_length=64)
 
     def __str__(self):
         return f"{self.userName} - {self.group}"

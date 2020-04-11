@@ -9,23 +9,18 @@ Groupchat
 
 <br>
 
-{% if signup %}
-<h3>Keep this safe - your private key is -</h3>
-<h6>{{ privatekey }}</h6>
-{% endif %}
-
 {% if is_member %}
 <form action="{% url 'sendmsg' %}" method="post">
     {% csrf_token %}
     <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
     <input name="msg" type="text" />
-    <button type="submit" name="username" value="{{ username }}" >Send</button>>
+    <button type="submit" name="username" value="{{ username }}" >Send</button>
 </form>
 
 <form action="{% url 'decodemsgs' %}" method="post">
     {% csrf_token %}
     <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
-    <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>>
+    <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>
 </form>
 {% endif %}
 

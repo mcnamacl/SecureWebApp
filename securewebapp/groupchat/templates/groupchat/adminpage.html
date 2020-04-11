@@ -50,11 +50,11 @@ Admin Page
     {% csrf_token %}
     <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
     <input name="msg" type="text" />
-    <button type="submit" name="username" value="{{ username }}" >Send</button>>
+    <button type="submit" name="username" value="{{ username }}" >Send</button>
 </form>
 <br>
 <form action="{% url 'updatesym' %}" method="post">
     {% csrf_token %}
-    <button type="submit" name="username" value="{{ username }}" >Update Symmetric Key</button>>
+    <button type="submit" name="username" value="{{ username }}" >Update Symmetric Key</button>
 </form>
 {% endblock %}
