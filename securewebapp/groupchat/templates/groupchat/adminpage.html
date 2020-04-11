@@ -9,7 +9,10 @@ Admin Page
 <ul>
     {% for member in fellowshipMembers %}
     <li>
-        {{ member.userName }}
+        <form action="{% url 'removefromfellowship' %}" method="post">
+            {% csrf_token %}
+            {{ member.userName }} <button type="submit" name="username" value="{{ member.userName }}" class="btn">Remove from The Fellowship</button>
+        </form>
     </li>
     {% endfor %}
 </ul>
@@ -18,10 +21,19 @@ Admin Page
 <ul>
     {% for member in mordorMembers %}
     <li>
-        {{ member.userName }}
+    <form action="{% url 'addtofellowship' %}" method="post">
+        {% csrf_token %}
+        {{ member.userName }} <button type="submit" name="username" value="{{ member.userName }}" class="btn">Add to The Fellowship</button>
+    </form>
     </li>
     {% endfor %}
 </ul>
+
+<form action="{% url 'decodemsgs' %}" method="post">
+    {% csrf_token %}
+    <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
+    <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>>
+</form>
 
 <h2>Posts:</h2>
 <ul>
@@ -36,12 +48,13 @@ Admin Page
 
 <form action="{% url 'sendmsg' %}" method="post">
     {% csrf_token %}
+    <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
     <input name="msg" type="text" />
-    <input type="submit" value="Send" />
+    <button type="submit" name="username" value="{{ username }}" >Send</button>>
 </form>
 <br>
 <form action="{% url 'updatesym' %}" method="post">
     {% csrf_token %}
-    <input type="submit" value="Update Symmetric Key" />
+    <button type="submit" name="username" value="{{ username }}" >Update Symmetric Key</button>>
 </form>
 {% endblock %}

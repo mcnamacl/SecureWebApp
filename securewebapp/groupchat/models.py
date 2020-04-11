@@ -1,8 +1,9 @@
 from django.db import models
+import base64
 
 class Message(models.Model):
     sender = models.CharField(max_length=64)
-    content = models.CharField(max_length=10000)
+    content = models.BinaryField()
 
     def __str__(self):
         return f"{self.content}"
@@ -10,7 +11,7 @@ class Message(models.Model):
 class Group(models.Model):
     groupName = models.CharField(max_length=64)
     messages = models.ManyToManyField(Message, related_name="group", blank=True)
-    currSymKey = models.CharField(max_length=1024, blank=True)
+    currSymKey = models.BinaryField()
 
     def __str__(self):
         return f"{self.groupName}" 
@@ -18,10 +19,10 @@ class Group(models.Model):
 class User(models.Model):
     userName = models.CharField(max_length=64)
     email = models.CharField(max_length=64, default="")
-    publicKey = models.CharField(max_length=1024)
     isAdmin = models.BooleanField(default=False)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True)
-    symKey = models.CharField(max_length=1024, blank=True)
+    symKey = models.BinaryField()
+    publicKey = models.BinaryField()
 
     def __str__(self):
         return f"{self.userName} - {self.group}"
