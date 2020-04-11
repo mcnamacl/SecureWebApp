@@ -28,15 +28,13 @@ Groupchat
     {% endfor %}
 </ul>
 
-{% if is_member %}
 <h2>Members:</h2>
 <ul>
     {% for member in members %}
     <li>
-        {{ member.username }}
+        {{ member.userName }}
     </li>
     {% endfor %}
 </ul>
-{% endif %}
 
 {% endblock %}

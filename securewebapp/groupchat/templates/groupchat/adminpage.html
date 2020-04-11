@@ -5,4 +5,21 @@ Admin Page
 {% endblock %}
 
 {% block body %}
+<h2>Fellowship Members:</h2>
+<ul>
+    {% for member in fellowshipMembers %}
+    <li>
+        {{ member.userName }}
+    </li>
+    {% endfor %}
+</ul>
+
+<h2>Mordor Members:</h2>
+<ul>
+    {% for member in mordorMembers %}
+    <li>
+        {{ member.userName }}
+    </li>
+    {% endfor %}
+</ul>
 {% endblock %}

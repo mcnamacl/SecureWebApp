@@ -17,6 +17,9 @@ def signup_show(request):
 def login_show(request):
     return render(request, "groupchat/login.html")
 
+def login_as_admin_show(request):
+    return render(request, "groupchat/adminpage.html")
+
 def signup(request):
     name = request.GET.get("name", "")
     email = request.GET.get("email", "")
@@ -24,19 +27,19 @@ def signup(request):
     newUser = User()
     newUser.userName = name
 
-    mordor = Group.objects.get(groupName="Mordor") 
-    theFellowship = Group.objects.get(groupName="The Fellowship") 
+    mordor = User.objects.filter(group=0)
+    theFellowship = User.objects.filter(group=1)
 
     alreadyExists = False
 
-    for member in mordor.members.all():
-        if member.userName == name:
+    for user in mordor:
+        if user.userName == name:
             alreadyExists = True
     
     if alreadyExists:
         return render(request, "groupchat/signup.html", {"message": "Username already exists."})
     
-    for member in theFellowship.members.all():
+    for member in theFellowship:
         if member.userName == name:
             alreadyExists = True
     
@@ -54,15 +57,29 @@ def signup(request):
     newUser.publicKey = privatePem
     newUser.privateKey = publicPem
 
+    is_member = False
+
+    members = []
+
+    if name == "Claire":
+        newUser.group = Group.objects.get(groupName="The Fellowship")
+        newUser.isAdmin = True
+        is_member = True
+        newUser.symKey = "lmao"
+    else:
+        newUser.group = Group.objects.get(groupName="Mordor")
+
     newUser.save()
 
-    mordor.members.add(newUser)
+    if name == "Claire":
+        members =  User.objects.filter(group=2)
+        print(members, file=sys.stderr)
 
-    officialgroup = Group.objects.all()[0]
 
     context = {
-        "is_member" : "false",
-        "messages" : officialgroup.messages.all()
+        "is_member" : is_member,
+        "messages" : Group.objects.get(groupName="The Fellowship").messages.all(),
+        "members" : members
     }
 
     return render(request, "groupchat/group.html")
@@ -72,9 +89,43 @@ def login(request):
     email = request.GET.get("email", "")
 
     user = User.objects.get(userName=name)
-    print(user.email, file=sys.stderr)
+    
+    theFellowship = User.objects.filter(group=2)
+    print(type(theFellowship), file=sys.stderr)
+    mordorMembers = User.objects.filter(group=1)
 
-    return render(request, "groupchat/group.html")
+    if user.isAdmin:
+        context = {
+            "fellowshipMembers" : theFellowship,
+            "mordorMembers" : mordorMembers
+        }
+        return render(request, "groupchat/adminpage.html", context)
+    
+    isFellowshipMember = False
+    if user.symKey != "":
+        isFellowshipMember = True
 
-def login_as_admin(request):
+    messages = []
+
+    for msg in Group.objects.get(groupName="The Fellowship").messages.all():
+        if isFellowshipMember:
+            msg = decodeMessage(msg.content, user.publicKey, user.privateKey, user.symKey)
+        messages.append(msg)
+
+    members = []
+
+    if isFellowshipMember:
+        members = User.objects.filter(group=2)
+    
+    context = {
+        "is_member" : isFellowshipMember,
+        "messages" : messages,
+        "members" : members
+    }
+    return render(request, "groupchat/group.html", context)
+
+def addUserToFellowship(request):
     return render(request, "groupchat/adminpage.html")
+
+def decodeMessage(encodedMsg):
+    return
