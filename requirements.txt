@@ -10,4 +10,4 @@ pytz==2019.3
 Simple-AES-Cipher==1.0.7
 sqlparse==0.3.1
 whitenoise==5.0.1
-virtualenv--no-site-packages==20.0.17
+virtualenv==20.0.17
