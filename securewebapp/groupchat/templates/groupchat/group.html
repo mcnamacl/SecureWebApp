@@ -12,32 +12,30 @@ Groupchat
 {% if is_member %}
 <form action="{% url 'sendmsg' %}" method="post">
     {% csrf_token %}
-    <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
     <input name="msg" type="text" />
     <button type="submit" name="username" value="{{ username }}" >Send</button>
 </form>
 
 <form action="{% url 'decodemsgs' %}" method="post">
     {% csrf_token %}
-    <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
     <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>
 </form>
 {% endif %}
 
 <h2>Posts:</h2>
 <ul>
-    {% for msg in messages %}
+    {% for content, sender in messages %}
     <li>
-        {{ msg.content }}
+        {{ content }}
         <br>
-        Posted by: {{ msg.sender }}
+        Posted by: {{ sender }}
     </li>
     {% endfor %}
 </ul>
 
 <h2>Members:</h2>
 <ul>
-    {% for member in members %}
+    {% for member in fellowshipMembers %}
     <li>
         {{ member.userName }}
     </li>

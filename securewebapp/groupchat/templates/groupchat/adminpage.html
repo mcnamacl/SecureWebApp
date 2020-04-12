@@ -11,7 +11,7 @@ Admin Page
     <li>
         <form action="{% url 'removefromfellowship' %}" method="post">
             {% csrf_token %}
-            {{ member.userName }} <button type="submit" name="username" value="{{ member.userName }}" class="btn">Remove from The Fellowship</button>
+            {{ member.userName }} <button type="submit" name="otheruser" value="{{ member.userName }}" class="btn">Remove from The Fellowship</button>
         </form>
     </li>
     {% endfor %}
@@ -23,7 +23,7 @@ Admin Page
     <li>
     <form action="{% url 'addtofellowship' %}" method="post">
         {% csrf_token %}
-        {{ member.userName }} <button type="submit" name="username" value="{{ member.userName }}" class="btn">Add to The Fellowship</button>
+        {{ member.userName }} <button type="submit" name="otheruser" value="{{ member.userName }}" class="btn">Add to The Fellowship</button>
     </form>
     </li>
     {% endfor %}
@@ -31,17 +31,16 @@ Admin Page
 
 <form action="{% url 'decodemsgs' %}" method="post">
     {% csrf_token %}
-    <!-- <p>Enter your private key: <input name="privkey" type="text" /></p> -->
-    <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>>
+    <button type="submit" name="username" value="{{ username }}" >Decode Messages</button>
 </form>
 
 <h2>Posts:</h2>
 <ul>
-    {% for msg in messages %}
+    {% for content, sender in messages %}
     <li>
-        {{ msg.content }}
+        {{ content }}
         <br>
-        Posted by: {{ msg.sender }}
+        Posted by: {{ sender }}
     </li>
     {% endfor %}
 </ul>
