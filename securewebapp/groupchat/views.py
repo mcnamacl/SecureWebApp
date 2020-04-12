@@ -139,9 +139,7 @@ def sendmsg(request):
     user = User.objects.get(userName=sender)
 
     # using user get symkey
-    symKey = getSymKey(user)
-    # symKey = Group.objects.get(groupName="The Fellowship").currSymKey
-    
+    symKey = getSymKey(user)    
     cipher = AESCipher(symKey)
 
     encryptedMsg = cipher.encrypt(msg)
@@ -206,7 +204,7 @@ def changesymkey():
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
     oldKey = theFellowshipGroup.currSymKey
-    newKey = b'oneringtoruleall'
+    newKey = os.urandom(16)
     theFellowshipGroup.currSymKey = newKey
     theFellowshipGroup.save()
 
@@ -310,13 +308,13 @@ def changeencryption(oldSymKey):
     newMessages = []
     messages = Group.objects.get(groupName="The Fellowship").messages.all()
     symKey = Group.objects.get(groupName="The Fellowship").currSymKey
-    cipher = AESCipher(symKey)
+    cipherOld = AESCipher(oldSymKey)
+    cipherNew = AESCipher(symKey)
 
     # new cipher with new symkey
 
     for message in messages:
-        msg = cipher.decrypt(message.content)
-        print(msg, file=sys.stderr)
-
-        # encrypt with new sym key
-        # update database
+        msg = cipherOld.decrypt(message.content)
+        message.content = cipherNew.encrypt(msg)
+        message.save()
+    return
