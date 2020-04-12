@@ -3,11 +3,11 @@ from django.http import HttpResponse
 from .models import Group, GroupUser, Message
 import sys, os, base64, re
 
-from Crypto.Util import Counter
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+from CryptoDome.Util import Counter
+from CryptoDome.PublicKey import RSA
+from CryptoDome.Cipher import PKCS1_OAEP
 import binascii
-from Crypto import Random
+from CryptoDome import Random
 from simple_aes_cipher import AESCipher
 
 def index(request):
