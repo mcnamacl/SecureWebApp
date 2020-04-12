@@ -1,8 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Group, User, Message
-import sys, os, base64
-import re
+from .models import Group, GroupUser, Message
+import sys, os, base64, re
 
 from Crypto.Util import Counter
 from Crypto.PublicKey import RSA
@@ -11,9 +10,8 @@ import binascii
 from Crypto import Random
 from simple_aes_cipher import AESCipher
 
-
 def index(request):
-    return render(request, "groupchat/index.html")
+    return render(request, "groupchat/login.html")
 
 def signup_show(request):
     return render(request, "groupchat/signup.html")
@@ -25,14 +23,14 @@ def login_as_admin_show(request):
     return render(request, "groupchat/adminpage.html")
 
 def signup(request):
-    name = request.GET.get("name", "")
-    email = request.GET.get("email", "")
+    name = request.POST.get("name", "")
+    email = request.POST.get("email", "")
 
-    newUser = User()
+    newUser = GroupUser()
     newUser.userName = name
 
-    mordor = User.objects.filter(group=1)
-    theFellowship = User.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
 
     alreadyExists = False
 
@@ -77,8 +75,8 @@ def signup(request):
     if name == "Claire":
         context = {
         "messages" : getencryptedmessages()   ,
-        "fellowshipMembers" : User.objects.filter(group=2),
-        "mordorMembers" : User.objects.filter(group=1),
+        "fellowshipMembers" : GroupUser.objects.filter(group=2),
+        "mordorMembers" : GroupUser.objects.filter(group=1),
         "username" : name
         }
         return render(request, "groupchat/adminpage.html", context)
@@ -93,13 +91,13 @@ def signup(request):
     return render(request, "groupchat/group.html", context)
 
 def login(request):
-    name = request.GET.get("name", "")
-    email = request.GET.get("email", "")
+    name = request.POST.get("name", "")
+    email = request.POST.get("email", "")
 
-    user = User.objects.get(userName=name)
+    user = GroupUser.objects.get(userName=name)
     
-    theFellowship = User.objects.filter(group=2)
-    mordor = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
 
     if user.isAdmin:
         context = {
@@ -118,25 +116,25 @@ def login(request):
     members = []
 
     if isFellowshipMember:
-        members = User.objects.filter(group=2)
+        members = GroupUser.objects.filter(group=2)
     
     context = {
         "signup" : False,
         "is_member" : isFellowshipMember,
         "messages" : getencryptedmessages(),
-        "members" : members, 
+        "fellowshipMembers" : members, 
         "username" : user.userName
     }
     return render(request, "groupchat/group.html", context)
 
 def sendmsg(request):
-    theFellowship = User.objects.filter(group=2)
-    mordorMembers = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordorMembers = GroupUser.objects.filter(group=1)
 
     msg = request.POST.get("msg")
     sender = request.POST.get("username")  
 
-    user = User.objects.get(userName=sender)
+    user = GroupUser.objects.get(userName=sender)
 
     # using user get symkey
     symKey = getSymKey(user)    
@@ -170,8 +168,8 @@ def getSymKey(user):
     return symKey
 
 def updatesym(request):
-    theFellowship = User.objects.filter(group=2)
-    mordor = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
 
     username = request.POST.get("username")
 
@@ -200,7 +198,7 @@ def getencryptedmessages():
     return zip(content, senders)
 
 def changesymkey():
-    theFellowship = User.objects.filter(group=2)
+    theFellowship = GroupUser.objects.filter(group=2)
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
     oldKey = theFellowshipGroup.currSymKey
@@ -220,10 +218,10 @@ def changesymkey():
 def addtofellowship(request):
     otheruser = request.POST.get("otheruser")
 
-    theFellowship = User.objects.filter(group=2)
-    mordor = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
 
-    user = User.objects.get(userName=otheruser)
+    user = GroupUser.objects.get(userName=otheruser)
     user.group = Group.objects.get(groupName="The Fellowship")
 
     currSymKey = Group.objects.get(groupName="The Fellowship").currSymKey
@@ -246,10 +244,10 @@ def addtofellowship(request):
 def removefromfellowship(request):
     otheruser = request.POST.get("otheruser")
 
-    theFellowship = User.objects.filter(group=2)
-    mordor = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
 
-    user = User.objects.get(userName=otheruser)
+    user = GroupUser.objects.get(userName=otheruser)
     user.group = Group.objects.get(groupName="Mordor")
     user.save()
 
@@ -267,11 +265,11 @@ def removefromfellowship(request):
 def decodemsgs(request):
     username = request.POST.get("username")
 
-    user = User.objects.get(userName=username)
+    user = GroupUser.objects.get(userName=username)
     symKey = getSymKey(user)
 
-    theFellowship = User.objects.filter(group=2)
-    mordor = User.objects.filter(group=1)
+    theFellowship = GroupUser.objects.filter(group=2)
+    mordor = GroupUser.objects.filter(group=1)
 
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 

@@ -16,7 +16,7 @@ class Group(models.Model):
     def __str__(self):
         return f"{self.groupName}" 
 
-class User(models.Model):
+class GroupUser(models.Model):
     userName = models.CharField(max_length=64)
     email = models.CharField(max_length=64, default="")
     isAdmin = models.BooleanField(default=False)
