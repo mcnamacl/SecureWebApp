@@ -27,6 +27,15 @@ def signup(request):
     name = request.POST.get("name", "")
     email = request.POST.get("email", "")
 
+    if user == "Claire":
+        mordor = Group()
+        fellowship = Group()
+        mordor.groupName = "Mordor"
+        fellowship.groupName = "The Fellowship"
+        fellowship.currSymKey = os.urandom(16)
+        mordor.save()
+        fellowship.save()
+
     newUser = GroupUser()
     newUser.userName = name
 
