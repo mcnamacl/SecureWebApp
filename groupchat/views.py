@@ -74,6 +74,9 @@ def signup(request):
     members = []
 
     if name == "Claire":
+        cipher = PKCS1_OAEP.new(pubkey)
+        encryptedSymKey = cipher.encrypt(Group.objects.get(groupName="The Fellowship").currSymKey)
+        newUser.symKey = encryptedSymKey
         newUser.group = Group.objects.get(groupName="The Fellowship")
         newUser.isAdmin = True
         is_member = True
