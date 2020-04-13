@@ -120,7 +120,7 @@ def signup(request):
     # with open(newUser.username + '_private_pem', 'w') as pr:
     #     pr.write(privateKey)
 
-    newUser.privateKey = privateKey.exportKey().decod
+    newUser.privateKey = privateKey.exportKey().decode()
 
     is_member = False
 
