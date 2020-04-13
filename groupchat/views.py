@@ -206,7 +206,7 @@ def getencryptedmessages():
     senders = []
 
     for message in Group.objects.get(groupName="The Fellowship").messages.all():
-        content.append(message.content.tobytes())
+        content.append(message.content.decode())
         senders.append(message.sender)
 
     return zip(content, senders)
@@ -294,7 +294,7 @@ def decodemsgs(request):
 
     for message in theFellowshipGroup.messages.all():
         msg = cipher.decrypt(message.content)
-        content.append(msg.tobytes())
+        content.append(msg.decode())
         senders.append(message.sender)
 
     if user.isAdmin:
