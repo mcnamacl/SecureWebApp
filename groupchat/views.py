@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-from .models import Group, GroupUser, Message
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from .models import Group, ExtraUserInfo, Message
 import sys, os, base64, re
+
+from django.contrib.auth.models import User
 
 from Crypto.Util import Counter
 from Crypto.PublicKey import RSA
@@ -10,9 +12,11 @@ import binascii
 from Crypto import Random
 
 from cryptography.fernet import Fernet
+from django.urls import reverse
+from django.contrib.auth import authenticate
 
 def index(request):
-    return render(request, "groupchat/login.html")
+    return render(request, "groupchat/adminsignup.html")
 
 def signup_show(request):
     return render(request, "groupchat/signup.html")
@@ -23,42 +27,25 @@ def login_show(request):
 def login_as_admin_show(request):
     return render(request, "groupchat/adminpage.html")
 
-def signup(request):
+def adminsignup(request):
     name = request.POST.get("name", "")
-    email = request.POST.get("email", "")
+    password = request.POST.get("password", "")
 
-    if name == "Claire":
-        mordor = Group()
-        fellowship = Group()
-        mordor.groupName = "Mordor"
-        fellowship.groupName = "The Fellowship"
-        fellowship.currSymKey = Fernet.generate_key()
-        mordor.save()
-        fellowship.save()
-
-    newUser = GroupUser()
-    newUser.userName = name
-
-    mordor = GroupUser.objects.filter(group=1)
-    theFellowship = GroupUser.objects.filter(group=2)
-
-    alreadyExists = False
-
-    for user in mordor:
-        if user.userName == name:
-            alreadyExists = True
+    user = User.objects.create_user(username=name,
+                                 password=password)
     
-    if alreadyExists:
-        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
-    
-    for member in theFellowship:
-        if member.userName == name:
-            alreadyExists = True
-    
-    if alreadyExists:
-        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
+    user.save()
 
-    newUser.email = email
+    newUser = ExtraUserInfo()
+    newUser.username = name
+    
+    mordor = Group()
+    fellowship = Group()
+    mordor.groupName = "Mordor"
+    fellowship.groupName = "The Fellowship"
+    fellowship.currSymKey = Fernet.generate_key()
+    mordor.save()
+    fellowship.save()
 
     privateKey = RSA.generate(1024)
     publicKey = privateKey.publickey()
@@ -66,34 +53,78 @@ def signup(request):
     newUser.publicKey = publicKey.exportKey().decode()
 
     privateKey = privateKey.exportKey().decode()
-    with open(newUser.userName + '_private_pem', 'w') as pr:
+    with open(newUser.username + '_private_pem', 'w') as pr:
+        pr.write(privateKey)
+
+    publicKey = RSA.importKey(newUser.publicKey)
+    cipher = PKCS1_OAEP.new(publicKey)
+    encryptedSymKey = cipher.encrypt(Group.objects.get(groupName="The Fellowship").currSymKey)
+    newUser.symKey = encryptedSymKey
+    newUser.group = Group.objects.get(groupName="The Fellowship")
+    newUser.isAdmin = True
+
+    is_member = True
+
+    newUser.save()
+
+    context = {
+        "messages" : getencryptedmessages()   ,
+        "fellowshipMembers" : ExtraUserInfo.objects.filter(group=2),
+        "mordorMembers" : ExtraUserInfo.objects.filter(group=1),
+        "username" : name
+        }
+
+    return render(request, "groupchat/adminpage.html", context)
+
+def signup(request):
+    name = request.POST.get("name", "")
+    password = request.POST.get("password", "")
+
+    newUser = ExtraUserInfo()
+
+    user = User.objects.create_user(username=name,
+                                 password=password)
+
+    user.save()
+
+    newUser = ExtraUserInfo()
+    newUser.username = name
+
+    mordor = ExtraUserInfo.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+
+    alreadyExists = False
+
+    for user in mordor:
+        if user.username == name:
+            alreadyExists = True
+    
+    if alreadyExists:
+        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
+    
+    for member in theFellowship:
+        if member.username == name:
+            alreadyExists = True
+    
+    if alreadyExists:
+        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
+
+    privateKey = RSA.generate(1024)
+    publicKey = privateKey.publickey()
+
+    newUser.publicKey = publicKey.exportKey().decode()
+
+    privateKey = privateKey.exportKey().decode()
+    with open(newUser.username + '_private_pem', 'w') as pr:
         pr.write(privateKey)
 
     is_member = False
 
     members = []
 
-    if name == "Claire":
-        publicKey = RSA.importKey(newUser.publicKey)
-        cipher = PKCS1_OAEP.new(publicKey)
-        encryptedSymKey = cipher.encrypt(Group.objects.get(groupName="The Fellowship").currSymKey)
-        newUser.symKey = encryptedSymKey
-        newUser.group = Group.objects.get(groupName="The Fellowship")
-        newUser.isAdmin = True
-        is_member = True
-    else:
-        newUser.group = Group.objects.get(groupName="Mordor")
+    newUser.group = Group.objects.get(groupName="Mordor")
     
     newUser.save()
-
-    if name == "Claire":
-        context = {
-        "messages" : getencryptedmessages()   ,
-        "fellowshipMembers" : GroupUser.objects.filter(group=2),
-        "mordorMembers" : GroupUser.objects.filter(group=1),
-        "username" : name
-        }
-        return render(request, "groupchat/adminpage.html", context)
 
     context = {
         "signup" : True,
@@ -105,63 +136,59 @@ def signup(request):
     return render(request, "groupchat/group.html", context)
 
 def login(request):
-    name = request.POST.get("name", "")
-    email = request.POST.get("email", "")
+    username = request.POST.get("name", "")
+    password = request.POST.get("password", "")
     
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordor = ExtraUserInfo.objects.filter(group=1)
 
     exists = False
 
-    for user in mordor:
-        if user.userName == name:
-            exists = True
-    
-    for member in theFellowship:
-        if member.userName == name:
-            exists = True
-    
-    if not exists:
-        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
+    u = User.objects.filter(username=username)
 
-    user = GroupUser.objects.get(userName=name)
+    correct = u[0].check_password(password)
+    
+    if not correct:
+        return render(request, "login.html", {"message": "Invalid credentials."})
 
-    if user.isAdmin:
+    userinfo = ExtraUserInfo.objects.get(username=username)
+
+    if userinfo.isAdmin:
         context = {
-            "username" : user.userName,
+            "username" : userinfo.username,
             "fellowshipMembers" : theFellowship,
             "mordorMembers" : mordor,
             "messages" : getencryptedmessages(),
-            "username" : name          
+            "username" : username          
             }
         return render(request, "groupchat/adminpage.html", context)
     
     isFellowshipMember = False
-    if user.group == Group.objects.get(groupName="The Fellowship"):
+    if userinfo.group == Group.objects.get(groupName="The Fellowship"):
         isFellowshipMember = True
 
     members = []
 
     if isFellowshipMember:
-        members = GroupUser.objects.filter(group=2)
+        members = ExtraUserInfo.objects.filter(group=2)
     
     context = {
         "signup" : False,
         "is_member" : isFellowshipMember,
         "messages" : getencryptedmessages(),
         "fellowshipMembers" : members, 
-        "username" : user.userName
+        "username" : u.username
     }
     return render(request, "groupchat/group.html", context)
 
 def sendmsg(request):
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordorMembers = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordorMembers = ExtraUserInfo.objects.filter(group=1)
 
     msg = request.POST.get("msg")
     sender = request.POST.get("username")  
 
-    user = GroupUser.objects.get(userName=sender)
+    user = ExtraUserInfo.objects.get(username=sender)
 
     # using user get symkey
     symKey = getSymKey(user)    
@@ -174,7 +201,7 @@ def sendmsg(request):
     Group.objects.get(groupName="The Fellowship").messages.add(message)
 
     context = {
-        "username" : user.userName,
+        "username" : user.username,
         "fellowshipMembers" : theFellowship,
         "mordorMembers" : mordorMembers,
         "messages" : getencryptedmessages(),
@@ -186,7 +213,7 @@ def sendmsg(request):
     return render(request, "groupchat/group.html", context)
 
 def getSymKey(user):
-    privKey = RSA.importKey(open(user.userName + '_private_pem', 'r').read())
+    privKey = RSA.importKey(open(user.username + '_private_pem', 'r').read())
 
     decrypt = PKCS1_OAEP.new(key=privKey)
 
@@ -195,8 +222,8 @@ def getSymKey(user):
     return symKey
 
 def updatesym(request):
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordor = ExtraUserInfo.objects.filter(group=1)
 
     username = request.POST.get("username")
 
@@ -225,7 +252,7 @@ def getencryptedmessages():
     return zip(content, senders)
 
 def changesymkey():
-    theFellowship = GroupUser.objects.filter(group=2)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
     oldKey = theFellowshipGroup.currSymKey
@@ -245,10 +272,10 @@ def changesymkey():
 def addtofellowship(request):
     otheruser = request.POST.get("otheruser")
 
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordor = ExtraUserInfo.objects.filter(group=1)
 
-    user = GroupUser.objects.get(userName=otheruser)
+    user = ExtraUserInfo.objects.get(username=otheruser)
     user.group = Group.objects.get(groupName="The Fellowship")
 
     currSymKey = Group.objects.get(groupName="The Fellowship").currSymKey
@@ -271,10 +298,10 @@ def addtofellowship(request):
 def removefromfellowship(request):
     otheruser = request.POST.get("otheruser")
 
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordor = ExtraUserInfo.objects.filter(group=1)
 
-    user = GroupUser.objects.get(userName=otheruser)
+    user = ExtraUserInfo.objects.get(username=otheruser)
     user.group = Group.objects.get(groupName="Mordor")
     user.save()
 
@@ -292,11 +319,11 @@ def removefromfellowship(request):
 def decodemsgs(request):
     username = request.POST.get("username")
 
-    user = GroupUser.objects.get(userName=username)
+    user = ExtraUserInfo.objects.get(username=username)
     symKey = getSymKey(user)
 
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
+    theFellowship = ExtraUserInfo.objects.filter(group=2)
+    mordor = ExtraUserInfo.objects.filter(group=1)
 
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
