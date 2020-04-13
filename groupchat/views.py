@@ -116,9 +116,11 @@ def signup(request):
 
     newUser.publicKey = publicKey.exportKey().decode()
 
-    privateKey = privateKey.exportKey().decode()
-    with open(newUser.username + '_private_pem', 'w') as pr:
-        pr.write(privateKey)
+    # privateKey = privateKey.exportKey().decode()
+    # with open(newUser.username + '_private_pem', 'w') as pr:
+    #     pr.write(privateKey)
+
+    newUser.privateKey = privateKey.exportKey().decod
 
     is_member = False
 
