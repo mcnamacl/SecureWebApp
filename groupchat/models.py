@@ -33,3 +33,4 @@ class ExtraUserInfo(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True)
     symKey = models.BinaryField()
     publicKey = models.CharField(max_length=2000)
+    privateKey = models.CharField(max_length=2000)
