@@ -8,7 +8,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import binascii
 from Crypto import Random
-from simple_aes_cipher import AESCipher
+
+from .simple_aes_cipher import AESCipher
 
 def index(request):
     return render(request, "groupchat/login.html")
