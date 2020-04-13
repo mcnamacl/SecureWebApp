@@ -66,8 +66,10 @@ def signup(request):
     newUser.publicKey = publicKey.exportKey().decode()
 
     privateKey = privateKey.exportKey().decode()
-    with open(newUser.userName + '_private_pem', 'w') as pr:
-        pr.write(privateKey)
+    # with open(newUser.userName + '_private_pem', 'w') as pr:
+    #     pr.write(privateKey)
+
+    newUser.privateKey = privateKey
 
     is_member = False
 
@@ -173,7 +175,8 @@ def sendmsg(request):
     return render(request, "groupchat/group.html", context)
 
 def getSymKey(user):
-    privKey = RSA.importKey(open(user.userName + '_private_pem', 'r').read())
+    # privKey = RSA.importKey(open(user.userName + '_private_pem', 'r').read())
+    privKey = RSA.importKey(user.privateKey)
 
     decrypt = PKCS1_OAEP.new(key=privKey)
 
