@@ -110,6 +110,8 @@ def login(request):
     name = request.POST.get("name", "")
     email = request.POST.get("email", "")
 
+    # Add in error handling for when a user does not exist yet.
+
     user = GroupUser.objects.get(userName=name)
     
     theFellowship = GroupUser.objects.filter(group=2)
