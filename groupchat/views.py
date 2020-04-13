@@ -56,7 +56,7 @@ def adminsignup(request):
     # with open(newUser.username + '_private_pem', 'w') as pr:
     #     pr.write(privateKey)
 
-    newUser.privateKey = privateKey
+    newUser.privateKey = privateKey.exportKey().decode()
 
     publicKey = RSA.importKey(newUser.publicKey)
     cipher = PKCS1_OAEP.new(publicKey)
@@ -223,26 +223,6 @@ def getSymKey(user):
     symKey = decrypt.decrypt(user.symKey)
 
     return symKey
-
-def updatesym(request):
-    theFellowship = ExtraUserInfo.objects.filter(group=2)
-    mordor = ExtraUserInfo.objects.filter(group=1)
-
-    username = request.POST.get("username")
-
-    oldSymKey = changesymkey()
-
-    if oldSymKey != '':
-        changeencryption(oldSymKey)
-
-    context = {
-        "username" : username,
-        "fellowshipMembers" : theFellowship,
-        "mordorMembers" : mordor,
-        "messages" : getencryptedmessages()      
-        }
-
-    return render(request, "groupchat/adminpage.html", context)
 
 def getencryptedmessages():
     content = []
