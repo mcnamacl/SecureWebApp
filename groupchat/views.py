@@ -27,7 +27,7 @@ def signup(request):
     name = request.POST.get("name", "")
     email = request.POST.get("email", "")
 
-    if user == "Claire":
+    if name == "Claire":
         mordor = Group()
         fellowship = Group()
         mordor.groupName = "Mordor"
