@@ -186,7 +186,7 @@ def getencryptedmessages():
     senders = []
 
     for message in Group.objects.get(groupName="The Fellowship").messages.all():
-        content.append(message.content.decode())
+        content.append((message.content).tobytes().decode())
         senders.append(message.sender)
 
     return zip(content, senders)
