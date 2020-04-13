@@ -27,6 +27,9 @@ def signup(request):
     name = request.POST.get("name", "")
     email = request.POST.get("email", "")
 
+    newUser = GroupUser()
+    newUser.userName = name
+
     if name == "Claire":
         mordor = Group()
         fellowship = Group()
@@ -35,9 +38,6 @@ def signup(request):
         fellowship.currSymKey = Fernet.generate_key()
         mordor.save()
         fellowship.save()
-
-    newUser = GroupUser()
-    newUser.userName = name
 
     mordor = GroupUser.objects.filter(group=1)
     theFellowship = GroupUser.objects.filter(group=2)
