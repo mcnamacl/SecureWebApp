@@ -1,1 +1,1 @@
-web: gunicorn groupchat.wsgi --log-file -
+web: gunicorn securewebapp.wsgi --log-file -
