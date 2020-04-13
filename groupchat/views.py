@@ -74,7 +74,7 @@ def signup(request):
     members = []
 
     if name == "Claire":
-        publicKey = RSA.importKey(publicKey)
+        publicKey = RSA.importKey(newUser.publicKey)
         cipher = PKCS1_OAEP.new(publicKey)
         encryptedSymKey = cipher.encrypt(Group.objects.get(groupName="The Fellowship").currSymKey)
         newUser.symKey = encryptedSymKey
