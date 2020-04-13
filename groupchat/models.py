@@ -3,7 +3,7 @@ import base64
 
 class Message(models.Model):
     sender = models.CharField(max_length=64)
-    content = models.CharField(max_length=64)
+    content = models.BinaryField()
 
     def __str__(self):
         return f"{self.content}"

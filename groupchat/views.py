@@ -9,7 +9,7 @@ from Crypto.Cipher import PKCS1_OAEP
 import binascii
 from Crypto import Random
 
-from .simple_aes_cipher import AESCipher
+from cryptography.fernet import Fernet
 
 def index(request):
     return render(request, "groupchat/login.html")
@@ -32,7 +32,7 @@ def signup(request):
         fellowship = Group()
         mordor.groupName = "Mordor"
         fellowship.groupName = "The Fellowship"
-        fellowship.currSymKey = os.urandom(16)
+        fellowship.currSymKey = Fernet.generate_key()
         mordor.save()
         fellowship.save()
 
@@ -152,9 +152,9 @@ def sendmsg(request):
 
     # using user get symkey
     symKey = getSymKey(user)    
-    cipher = AESCipher(symKey)
+    cipher = Fernet(symKey)
 
-    encryptedMsg = cipher.encrypt(msg)
+    encryptedMsg = cipher.encrypt(msg.encode())
 
     message = Message(sender=sender, content=encryptedMsg)
     message.save()
@@ -206,7 +206,7 @@ def getencryptedmessages():
     senders = []
 
     for message in Group.objects.get(groupName="The Fellowship").messages.all():
-        content.append(message.content)
+        content.append(message.content.decode())
         senders.append(message.sender)
 
     return zip(content, senders)
@@ -216,7 +216,7 @@ def changesymkey():
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
 
     oldKey = theFellowshipGroup.currSymKey
-    newKey = os.urandom(16)
+    newKey = Fernet.generate_key()
     theFellowshipGroup.currSymKey = newKey
     theFellowshipGroup.save()
 
@@ -290,11 +290,11 @@ def decodemsgs(request):
     content = []
     senders = []
 
-    cipher = AESCipher(symKey)
+    cipher = Fernet(symKey)
 
     for message in theFellowshipGroup.messages.all():
         msg = cipher.decrypt(message.content)
-        content.append(msg)
+        content.append(msg.decode())
         senders.append(message.sender)
 
     if user.isAdmin:
@@ -320,8 +320,8 @@ def changeencryption(oldSymKey):
     newMessages = []
     messages = Group.objects.get(groupName="The Fellowship").messages.all()
     symKey = Group.objects.get(groupName="The Fellowship").currSymKey
-    cipherOld = AESCipher(oldSymKey)
-    cipherNew = AESCipher(symKey)
+    cipherOld = Fernet(oldSymKey)
+    cipherNew = Fernet(symKey)
 
     # new cipher with new symkey
 
