@@ -23,12 +23,12 @@ TODO: Add in error handling and a way to download the private key onto the local
 ## localsecurewebapp Branch  
 This is the branch that can be run locally.   
 Git clone this branch and navigate to the folder.  
-Then run to get the dependencies, set up the database and get the code running -
+To get the dependencies, set up the database and get the code running run -   
 pip install -r requirements.txt   
 python manage.py makemigrations  
 python manage.py migrate  
 python manage.py runserver 8080  
 Go to localhost:8080 and the sign up page should appear. This is the admin sign up page.  
 Sign up using the username: Admin and the password can be whatever you want. Do this only 
-once after that sign up using the url that ends in "signup_show".
+once. After that sign up use the url that ends in "signup_show".
 
