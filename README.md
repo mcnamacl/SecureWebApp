@@ -17,12 +17,12 @@ using the old key and re-encrypted using the new key. All users have their versi
 public key and stored back in the database.
 
 ## Master Branch   
-![Heroku Example](Demo/Heroku-Example.gif)  
+![Heroku Example](Demo/Local-Example.gif)  
 This is the branch that has been deployed on heroku: https://lotrsecuregroupchat.herokuapp.com/signup_show  
 TODO: Add in error handling and a way to download the private key onto the local database.
 
 ## localsecurewebapp Branch  
-![Local Example](Demo/Local-Example.gif)  
+![Local Example](Demo/Heroku-Example.gif)  
 
 This is the branch that can be run locally.   
 Git clone this branch and navigate to the folder.  
