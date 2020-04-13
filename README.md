@@ -3,7 +3,7 @@
 A LOTR style groupchat that the admin has full control over. Only users added by the admin can decrypt the posts/post a message themself. 
 It implements a Hybrid Crypto System using RSA and AES in mode CBC - RSA as each user has a public and private key, and AES as the group 
 itself has a symmetric key in which all posts are encrypted in. Two libraries are used to do this - Cryptography for AES and 
-Pycryptodome for RSA.
+Pycryptodome for RSA. The web framework used is Django and the front end was enhanced using bootstrap.
 
 ### Adding a new user:
 When a new user is added, the current symmetric key is gotten from the 
