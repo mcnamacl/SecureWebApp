@@ -16,11 +16,14 @@ When a user is removed, the symmtric key has to be updated. This means a new one
 using the old key and re-encrypted using the new key. All users have their version of the symmetric key encoded with their 
 public key and stored back in the database.
 
-## Master Branch  
+## Master Branch   
+![Heroku Example](Demo/Heroku-Example.gif)  
 This is the branch that has been deployed on heroku: https://lotrsecuregroupchat.herokuapp.com/signup_show  
 TODO: Add in error handling and a way to download the private key onto the local database.
 
 ## localsecurewebapp Branch  
+![Local Example](Demo/Local-Example.gif)  
+
 This is the branch that can be run locally.   
 Git clone this branch and navigate to the folder.  
 To get the dependencies, set up the database and get the code running run -   
