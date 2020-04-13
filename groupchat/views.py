@@ -107,11 +107,24 @@ def signup(request):
 def login(request):
     name = request.POST.get("name", "")
     email = request.POST.get("email", "")
-
-    user = GroupUser.objects.get(userName=name)
     
     theFellowship = GroupUser.objects.filter(group=2)
     mordor = GroupUser.objects.filter(group=1)
+
+    exists = False
+
+    for user in mordor:
+        if user.userName == name:
+            exists = True
+    
+    for member in theFellowship:
+        if member.userName == name:
+            exists = True
+    
+    if not exists:
+        return render(request, "groupchat/signup.html", {"message": "Username already exists."})
+
+    user = GroupUser.objects.get(userName=name)
 
     if user.isAdmin:
         context = {
