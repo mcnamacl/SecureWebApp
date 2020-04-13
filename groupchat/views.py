@@ -183,7 +183,7 @@ def login(request):
         "is_member" : isFellowshipMember,
         "messages" : getencryptedmessages(),
         "fellowshipMembers" : members, 
-        "username" : u.username
+        "username" : username
     }
     return render(request, "groupchat/group.html", context)
 
