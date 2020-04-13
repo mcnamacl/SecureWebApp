@@ -181,32 +181,12 @@ def getSymKey(user):
 
     return symKey
 
-def updatesym(request):
-    theFellowship = GroupUser.objects.filter(group=2)
-    mordor = GroupUser.objects.filter(group=1)
-
-    username = request.POST.get("username")
-
-    oldSymKey = changesymkey()
-
-    if oldSymKey != '':
-        changeencryption(oldSymKey)
-
-    context = {
-        "username" : username,
-        "fellowshipMembers" : theFellowship,
-        "mordorMembers" : mordor,
-        "messages" : getencryptedmessages()      
-        }
-
-    return render(request, "groupchat/adminpage.html", context)
-
 def getencryptedmessages():
     content = []
     senders = []
 
     for message in Group.objects.get(groupName="The Fellowship").messages.all():
-        content.append(message.content.tobytes())
+        content.append(message.content.decode())
         senders.append(message.sender)
 
     return zip(content, senders)
@@ -293,8 +273,8 @@ def decodemsgs(request):
     cipher = Fernet(symKey)
 
     for message in theFellowshipGroup.messages.all():
-        msg = cipher.decrypt(message.content)
-        content.append(msg.tobytes())
+        msg = cipher.decrypt((message.content).tobytes())
+        content.append(msg.decode())
         senders.append(message.sender)
 
     if user.isAdmin:
@@ -324,9 +304,8 @@ def changeencryption(oldSymKey):
     cipherNew = Fernet(symKey)
 
     # new cipher with new symkey
-
     for message in messages:
-        msg = cipherOld.decrypt(message.content)
+        msg = cipherOld.decrypt((message.content).tobytes())
         message.content = cipherNew.encrypt(msg)
         message.save()
     return
