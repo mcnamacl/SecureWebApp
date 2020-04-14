@@ -4,16 +4,17 @@ from .models import Group, ExtraUserInfo, Message
 import sys, os, base64, re
 
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.contrib.auth import authenticate
 
+# Libraries used for encryption and decryption.
 from Crypto.Util import Counter
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import binascii
 from Crypto import Random
-
 from cryptography.fernet import Fernet
-from django.urls import reverse
-from django.contrib.auth import authenticate
+
 
 def index(request):
     return render(request, "groupchat/adminsignup.html")
@@ -27,6 +28,7 @@ def login_show(request):
 def login_as_admin_show(request):
     return render(request, "groupchat/adminpage.html")
 
+# Only ran once to set up the Admin and the two different groups.
 def adminsignup(request):
     name = request.POST.get("name", "")
     password = request.POST.get("password", "")
@@ -78,6 +80,9 @@ def adminsignup(request):
 
     return render(request, "groupchat/adminpage.html", context)
 
+# Creates a new user and a new entry for them in the database that stores information
+# such as their public key. Saves their private key to the computer using their
+# username.
 def signup(request):
     name = request.POST.get("name", "")
     password = request.POST.get("password", "")
@@ -139,6 +144,9 @@ def signup(request):
     }
     return render(request, "groupchat/group.html", context)
 
+# Verifies the correct password has been entered and if so
+# brings them to the group page if they are not admin
+# or the admin page if they are.
 def login(request):
     username = request.POST.get("name", "")
     password = request.POST.get("password", "")
@@ -185,6 +193,7 @@ def login(request):
     }
     return render(request, "groupchat/group.html", context)
 
+# Encodes and posts the message to the group.
 def sendmsg(request):
     theFellowship = ExtraUserInfo.objects.filter(group=2)
     mordorMembers = ExtraUserInfo.objects.filter(group=1)
@@ -216,6 +225,7 @@ def sendmsg(request):
 
     return render(request, "groupchat/group.html", context)
 
+# Decrypts the symmetric key using the users private key.
 def getSymKey(user):
     # privKey = RSA.importKey(open(user.username + '_private_pem', 'r').read())
     privKey = RSA.importKey(user.privateKey)
@@ -226,6 +236,7 @@ def getSymKey(user):
 
     return symKey
 
+# Returns the messages from the database still encrypted.
 def getencryptedmessages():
     content = []
     senders = []
@@ -236,6 +247,8 @@ def getencryptedmessages():
 
     return zip(content, senders)
 
+# Creates a new symmetric key, updates the group data base, encrypts the 
+# new symmetric key for each user using their public key and stores it,
 def changesymkey():
     theFellowship = ExtraUserInfo.objects.filter(group=2)
     theFellowshipGroup = Group.objects.get(groupName="The Fellowship")
@@ -254,6 +267,10 @@ def changesymkey():
         member.save()
     return oldKey
 
+# Adds a new member to the fellowship - gets the current
+# group symmetric key and encrypts it using the users
+# public key and changes the name of the group they
+# are a member of.
 def addtofellowship(request):
     otheruser = request.POST.get("otheruser")
 
@@ -280,6 +297,9 @@ def addtofellowship(request):
         }
     return render(request, "groupchat/adminpage.html", context)
 
+# Removes a user from the group and updates the old symmetric
+# key for the rest of the current members and re-encrypts 
+# the messages using the new symmetric key.
 def removefromfellowship(request):
     otheruser = request.POST.get("otheruser")
 
@@ -301,6 +321,10 @@ def removefromfellowship(request):
         }
     return render(request, "groupchat/adminpage.html", context)
 
+# Decodes the mesages by getting the encoded symmetric key
+# from the entry in the database associated with that user,
+# decrypting it using their private key and then using 
+# the decrypted symmetric key to decrypt all the messages.
 def decodemsgs(request):
     username = request.POST.get("username")
 
@@ -341,14 +365,14 @@ def decodemsgs(request):
 
     return render(request, "groupchat/group.html", context)
 
+# Decrypts all the current messages using the old symmetric 
+# key and reencrypts them using the new one.
 def changeencryption(oldSymKey):
     newMessages = []
     messages = Group.objects.get(groupName="The Fellowship").messages.all()
     symKey = Group.objects.get(groupName="The Fellowship").currSymKey
     cipherOld = Fernet(oldSymKey)
     cipherNew = Fernet(symKey)
-
-    # new cipher with new symkey
 
     for message in messages:
         msg = cipherOld.decrypt((message.content).tobytes())
